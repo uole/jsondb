@@ -54,13 +54,6 @@ func (query *Query) isComparable(kind reflect.Kind) bool {
 	return false
 }
 
-func (query *Query) fixValue(v interface{}, kind reflect.Kind) interface{} {
-	switch kind {
-
-	}
-	return v
-}
-
 func (query *Query) filter(e *expression, m Document) (ok bool) {
 	var (
 		n   int
@@ -68,7 +61,6 @@ func (query *Query) filter(e *expression, m Document) (ok bool) {
 		v   interface{}
 		err error
 	)
-
 	if col, err = query.schema.GetColumn(e.Field); err != nil {
 		//if epr is not equal return true, otherwise return false
 		if e.Expr == ExprNotEqual {
@@ -169,9 +161,10 @@ __end:
 
 func (query *Query) Find(v interface{}) (err error) {
 	var (
-		index int
-		count int
-		mv    reflect.Value
+		index   int
+		count   int
+		isMatch bool
+		mv      reflect.Value
 	)
 	if len(query.documents) <= 0 {
 		return ErrRecordNotFound
@@ -186,20 +179,25 @@ func (query *Query) Find(v interface{}) (err error) {
 		return
 	}
 	result := make([]reflect.Value, 0, len(query.documents))
-	for _, expr := range query.expressions {
-		for _, document := range query.documents {
-			if query.filter(expr, document) {
-				if index >= query.offset {
-					if mv, err = document.Unmarshal(refType.Elem().Elem()); err == nil {
-						result = append(result, mv)
-						count++
-						if query.limit > 0 && count >= query.limit {
-							goto __end
-						}
+	for _, document := range query.documents {
+		isMatch = true
+		for _, expr := range query.expressions {
+			if !query.filter(expr, document) {
+				isMatch = false
+				break
+			}
+		}
+		if isMatch {
+			if index >= query.offset {
+				if mv, err = document.Unmarshal(refType.Elem().Elem()); err == nil {
+					result = append(result, mv)
+					count++
+					if query.limit > 0 && count >= query.limit {
+						goto __end
 					}
 				}
-				index++
 			}
+			index++
 		}
 	}
 __end:
