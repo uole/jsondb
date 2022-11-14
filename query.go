@@ -108,6 +108,7 @@ func (query *Query) filter(e *expression, m Document) (ok bool) {
 	return
 }
 
+//Where add query condition
 func (query *Query) Where(field string, expr string, value interface{}) *Query {
 	if query.expressions == nil {
 		query.expressions = make([]*expression, 0, 10)
@@ -120,11 +121,13 @@ func (query *Query) Where(field string, expr string, value interface{}) *Query {
 	return query
 }
 
+//Offset set data offset
 func (query *Query) Offset(n int) *Query {
 	query.offset = n
 	return query
 }
 
+//Limit set record limit
 func (query *Query) Limit(n int) *Query {
 	query.limit = n
 	return query

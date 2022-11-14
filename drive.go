@@ -64,6 +64,7 @@ func (drive *Drive) flushToFile(ctx context.Context, tableName string, documents
 	return
 }
 
+//Query create record query object
 func (drive *Drive) Query(ctx context.Context, model Model) *Query {
 	var (
 		err       error
@@ -79,6 +80,7 @@ func (drive *Drive) Query(ctx context.Context, model Model) *Query {
 	return newQuery(model, schema, documents)
 }
 
+//Insert add record to database
 func (drive *Drive) Insert(ctx context.Context, model Model) (err error) {
 	var (
 		documents []Document
@@ -93,6 +95,39 @@ func (drive *Drive) Insert(ctx context.Context, model Model) (err error) {
 	return
 }
 
+//Find get record by primary key
+func (drive *Drive) Find(ctx context.Context, model Model) (err error) {
+	var (
+		n         int
+		schema    *Schema
+		documents []Document
+		pk        interface{}
+		comparePK interface{}
+	)
+	drive.mutex.Lock()
+	defer drive.mutex.Unlock()
+	if schema, err = parseModelSchema(model); err != nil {
+		return
+	}
+	if pk, err = schema.GetPrimaryValue(model); err != nil {
+		return
+	}
+	if documents, err = drive.loadFromFile(ctx, model); err != nil {
+		return ErrRecordNotFound
+	}
+	for _, document := range documents {
+		if comparePK = document.Getter(schema.PrimaryColumn().Name, schema.PrimaryColumn().JsonName); err == nil {
+			if n, err = compare(pk, comparePK); err == nil && n == 0 {
+				err = document.Decode(model)
+				return
+			}
+		}
+	}
+	err = ErrRecordNotFound
+	return
+}
+
+//Update update record by primary key
 func (drive *Drive) Update(ctx context.Context, model Model) (err error) {
 	var (
 		n         int
@@ -130,6 +165,7 @@ func (drive *Drive) Update(ctx context.Context, model Model) (err error) {
 	return
 }
 
+//ReplaceInto add or update record by primary key
 func (drive *Drive) ReplaceInto(ctx context.Context, model Model) (err error) {
 	if err = drive.Update(ctx, model); err != nil {
 		if errors.Is(err, ErrRecordNotFound) {
@@ -139,6 +175,7 @@ func (drive *Drive) ReplaceInto(ctx context.Context, model Model) (err error) {
 	return
 }
 
+//Delete remove record by primary key
 func (drive *Drive) Delete(ctx context.Context, model Model) (err error) {
 	var (
 		n         int
