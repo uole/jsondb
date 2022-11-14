@@ -40,4 +40,8 @@ func main() {
 	}); err != nil {
 		fmt.Println(err)
 	}
+	user := &User{ID: 2}
+	if err = db.Find(context.Background(), user); err != nil {
+		fmt.Println(err)
+	}
 }

@@ -21,6 +21,17 @@ func (document Document) Getter(names ...string) interface{} {
 	return v
 }
 
+func (document Document) Decode(v interface{}) (err error) {
+	var (
+		buf []byte
+	)
+	if buf, err = json.Marshal(document); err != nil {
+		return
+	}
+	err = json.Unmarshal(buf, v)
+	return
+}
+
 func (document Document) Unmarshal(refType reflect.Type) (val reflect.Value, err error) {
 	var (
 		buf []byte
