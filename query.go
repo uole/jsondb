@@ -132,26 +132,32 @@ func (query *Query) Limit(n int) *Query {
 
 func (query *Query) Documents() (documents []Document, err error) {
 	var (
-		index int
-		count int
+		index   int
+		count   int
+		isMatch bool
 	)
 	if len(query.documents) <= 0 {
 		err = ErrRecordNotFound
 		return
 	}
 	documents = make([]Document, 0, len(query.documents))
-	for _, expr := range query.expressions {
-		for _, document := range query.documents {
-			if query.filter(expr, document) {
-				if index >= query.offset {
-					documents = append(documents, document)
-					count++
-					if query.limit > 0 && count >= query.limit {
-						goto __end
-					}
-				}
-				index++
+	for _, document := range query.documents {
+		isMatch = true
+		for _, expr := range query.expressions {
+			if !query.filter(expr, document) {
+				isMatch = false
+				break
 			}
+		}
+		if isMatch {
+			if index >= query.offset {
+				documents = append(documents, document)
+				count++
+				if query.limit > 0 && count >= query.limit {
+					goto __end
+				}
+			}
+			index++
 		}
 	}
 __end:
