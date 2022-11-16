@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/uole/jsondb"
 	"os"
+	"time"
 )
 
 type User struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 func (u *User) TableName() string {
@@ -29,8 +31,9 @@ func main() {
 		fmt.Println(err)
 	}
 	if err = db.Insert(context.Background(), &User{
-		ID:   1,
-		Name: "Hello",
+		ID:        1,
+		Name:      "Hello",
+		CreatedAt: time.Now(),
 	}); err != nil {
 		fmt.Println(err)
 	}

@@ -52,7 +52,9 @@ func (document Document) Unmarshal(refType reflect.Type) (val reflect.Value, err
 
 func toDocument(v interface{}) Document {
 	var (
+		err         error
 		pos         int
+		buf         []byte
 		fieldName   string
 		refValue    reflect.Value
 		refType     reflect.Type
@@ -69,11 +71,20 @@ func toDocument(v interface{}) Document {
 		if fieldName == "-" {
 			continue
 		}
+		if !structField.IsExported() {
+			continue
+		}
 		if pos = strings.IndexByte(fieldName, ','); pos > -1 {
-			fieldName = fieldName[:i]
+			fieldName = fieldName[:pos]
 		}
 		if fieldName == "" {
 			fieldName = structField.Name
+		}
+		if marshaler, ok := fieldValue.Interface().(json.Marshaler); ok {
+			if buf, err = marshaler.MarshalJSON(); err == nil {
+				doc[fieldName] = strings.Trim(string(buf), "\"")
+				continue
+			}
 		}
 		switch fieldValue.Kind() {
 		case reflect.Struct:
